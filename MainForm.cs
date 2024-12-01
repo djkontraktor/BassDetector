@@ -19,9 +19,9 @@ namespace BassDetector
         private BufferedWaveProvider buffer;
         private Timer timer;
         private bool ledOn = false;
-        private float A = 1;
-        private float fLow = 20;
-        private float fHigh = 100;
+        private float A = 0.0015F;
+        private float fLow = 30;
+        private float fHigh = 90;
 
         public MainForm()
         {
@@ -41,7 +41,7 @@ namespace BassDetector
             // Set up timer for analysis
             timer = new Timer
             {
-                Interval = 100 // Check every 100 milliseconds
+                Interval = 10 // Check every 100 milliseconds
             };
             timer.Tick += AnalyzeAudio;
             timer.Start();
@@ -85,12 +85,12 @@ namespace BassDetector
             if (amplitude >= A)
             {
                 ledOn = true;
-                ledPictureBox.BackColor = Color.Black;
+                ledPictureBox.BackColor = Color.Green;
             }
             else
             {
                 ledOn = false;
-                ledPictureBox.BackColor = Color.Green;
+                ledPictureBox.BackColor = Color.Black;
             }
         }
     }
