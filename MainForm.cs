@@ -12,6 +12,7 @@ using NAudio.Dsp;
 using SharpDX.XAudio2;
 using SharpDX.Multimedia;
 using System.IO;
+using SharpDX;
 
 namespace BassDetector
 {
@@ -54,15 +55,22 @@ namespace BassDetector
         {
             string fileName = PathMgt.ReturnRandomWaveFile(mHumidity, mWaveLength);
 
-            XAudio2 yourAudiodevice = new XAudio2();
+            XAudio2 xAudio2 = new XAudio2();
 
-            MasteringVoice thisMasteringVoice = new MasteringVoice(yourAudiodevice);
+            MasteringVoice masteringVoice = new MasteringVoice(xAudio2);
 
-            SourceVoice sourceVoice = new SourceVoice(yourAudiodevice, new SharpDX.Multimedia.WaveFormat(), true);
+            SharpDX.Multimedia.WaveFormat waveFormat = new SharpDX.Multimedia.WaveFormat(44100, 16, 2);
 
-            SoundStream soundStream = new SoundStream(File.OpenRead(fileName));
+            AudioBuffer audioBuffer = new AudioBuffer
+            {
+                Stream = new DataStream(File.ReadAllBytes(fileName).Length, true, false),
+                AudioBytes = (int)new FileInfo(fileName).Length,
+                Flags = BufferFlags.EndOfStream
+            };
 
-            AudioBuffer audioBuffer = new AudioBuffer { Stream = soundStream.ToDataStream(), AudioBytes = (int)soundStream.Length, Flags = BufferFlags.EndOfStream };
+            SourceVoice sourceVoice = new SourceVoice(xAudio2, waveFormat);
+
+            sourceVoice.SubmitSourceBuffer(audioBuffer, null);
 
             sourceVoice.Start();
         }
