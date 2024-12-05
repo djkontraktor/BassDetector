@@ -19,13 +19,12 @@ namespace BassDetector
     public partial class MainForm : Form
     {
 
-        private WasapiLoopbackCapture capture;
-        private BufferedWaveProvider buffer;
-        private Timer timer;
-        private bool ledOn = false;
-        private float A = 0.0005F;
-        private float fLow = 30;
-        private float fHigh = 90;
+        private WasapiLoopbackCapture mWasapiLoopbackCapture;
+        private BufferedWaveProvider mBufferedWaveProvider;
+        private bool mLedOn = false;
+        private float mAmplitudeTriggerThreshold = 0.0005F;
+        private float mCutoffFreq_Low_Hz = 30;
+        private float mCutoffFreq_High_Hz = 90;
         private Enums.Humidity mHumidity = Enums.Humidity.Dry;
         private Enums.WaveLength mWaveLength = Enums.WaveLength.Short;
 
@@ -33,17 +32,17 @@ namespace BassDetector
         {
             InitializeComponent();
 
-            capture = new WasapiLoopbackCapture();
-            buffer = new BufferedWaveProvider(capture.WaveFormat);
+            mWasapiLoopbackCapture = new WasapiLoopbackCapture();
+            mBufferedWaveProvider = new BufferedWaveProvider(mWasapiLoopbackCapture.WaveFormat);
 
-            capture.DataAvailable += (s, a) =>
+            mWasapiLoopbackCapture.DataAvailable += (s, a) =>
             {
-                buffer.AddSamples(a.Buffer, 0, a.BytesRecorded);
+                mBufferedWaveProvider.AddSamples(a.Buffer, 0, a.BytesRecorded);
             };
 
-            capture.StartRecording();
+            mWasapiLoopbackCapture.StartRecording();
 
-            timer = new Timer
+            Timer timer = new Timer
             {
                 Interval = 10
             };
@@ -77,9 +76,9 @@ namespace BassDetector
 
         private void AnalyzeAudio(object sender, EventArgs e)
         {
-            byte[] byteBuffer = new byte[buffer.BufferLength];
+            byte[] byteBuffer = new byte[mBufferedWaveProvider.BufferLength];
 
-            buffer.Read(byteBuffer, 0, buffer.BufferLength);
+            mBufferedWaveProvider.Read(byteBuffer, 0, mBufferedWaveProvider.BufferLength);
 
             float[] audioData = new float[byteBuffer.Length / 4];
 
@@ -98,9 +97,9 @@ namespace BassDetector
 
             FastFourierTransform.FFT(true, (int)Math.Log(audioData.Length, 2.0), fftBuffer);
 
-            int sampleRate = capture.WaveFormat.SampleRate;
-            int lowIndex = (int)(fLow / sampleRate * audioData.Length);
-            int highIndex = (int)(fHigh / sampleRate * audioData.Length);
+            int sampleRate = mWasapiLoopbackCapture.WaveFormat.SampleRate;
+            int lowIndex = (int)(mCutoffFreq_Low_Hz / sampleRate * audioData.Length);
+            int highIndex = (int)(mCutoffFreq_High_Hz / sampleRate * audioData.Length);
 
             float amplitude = 0;
 
@@ -111,20 +110,20 @@ namespace BassDetector
 
             amplitude = (float)Math.Sqrt(amplitude);
 
-            if (amplitude >= A)
+            if (amplitude >= mAmplitudeTriggerThreshold)
             {
-                if (!ledOn)
+                if (!mLedOn)
                 {
-                    ledOn = true;
+                    mLedOn = true;
                     ledPictureBox.BackColor = Color.Green;
                     PlaySound();
                 }
             }
             else
             {
-                if (ledOn)
+                if (mLedOn)
                 {
-                    ledOn = false;
+                    mLedOn = false;
                     ledPictureBox.BackColor = Color.Black;
                 }
             }
