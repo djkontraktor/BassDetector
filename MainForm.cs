@@ -9,31 +9,29 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using NAudio.Wave;
 using NAudio.Dsp;
-using SharpDX.XAudio2;
-using SharpDX.Multimedia;
 using System.IO;
-using SharpDX;
+using System.Threading;
 
 namespace BassDetector
 {
     public partial class MainForm : Form
     {
 
-        private WasapiLoopbackCapture mWasapiLoopbackCapture;
-        private BufferedWaveProvider mBufferedWaveProvider;
+        private static WasapiLoopbackCapture mWasapiLoopbackCapture = new WasapiLoopbackCapture();
+        private static BufferedWaveProvider mBufferedWaveProvider = new BufferedWaveProvider(mWasapiLoopbackCapture.WaveFormat);
         private bool mLedOn = false;
         private float mAmplitudeTriggerThreshold = 0.0005F;
         private float mCutoffFreq_Low_Hz = 30;
         private float mCutoffFreq_High_Hz = 90;
         private Enums.Humidity mHumidity = Enums.Humidity.Dry;
         private Enums.WaveLength mWaveLength = Enums.WaveLength.Short;
+        private bool mProgramRunning = true;
+        private IWavePlayer mWaveOut;
+        private AudioFileReader mAudioFileReader;
 
         public MainForm()
         {
             InitializeComponent();
-
-            mWasapiLoopbackCapture = new WasapiLoopbackCapture();
-            mBufferedWaveProvider = new BufferedWaveProvider(mWasapiLoopbackCapture.WaveFormat);
 
             mWasapiLoopbackCapture.DataAvailable += (s, a) =>
             {
@@ -42,39 +40,53 @@ namespace BassDetector
 
             mWasapiLoopbackCapture.StartRecording();
 
-            Timer timer = new Timer
-            {
-                Interval = 10
-            };
-            timer.Tick += AnalyzeAudio;
-            timer.Start();
+            //while (mProgramRunning)
+            //{
+            //    System.Threading.Thread.Sleep(100);
+            //    AnalyzeAudio();
+            //}
+
         }
 
         private void PlaySound()
         {
-            string fileName = PathMgt.ReturnRandomWaveFile(mHumidity, mWaveLength);
-
-            XAudio2 xAudio2 = new XAudio2();
-
-            MasteringVoice masteringVoice = new MasteringVoice(xAudio2);
-
-            SharpDX.Multimedia.WaveFormat waveFormat = new SharpDX.Multimedia.WaveFormat(44100, 16, 2);
-
-            AudioBuffer audioBuffer = new AudioBuffer
+            if (!(mWaveOut == null) && !mWaveOut.PlaybackState.Equals(PlaybackState.Playing))
             {
-                Stream = new DataStream(File.ReadAllBytes(fileName).Length, true, false),
-                AudioBytes = (int)new FileInfo(fileName).Length,
-                Flags = BufferFlags.EndOfStream
-            };
+                string fileName = PathMgt.ReturnRandomWaveFile(mHumidity, mWaveLength);
 
-            SourceVoice sourceVoice = new SourceVoice(xAudio2, waveFormat);
+                WaveOutEvent waveOutEvent = new WaveOutEvent();
 
-            sourceVoice.SubmitSourceBuffer(audioBuffer, null);
+                mAudioFileReader = new AudioFileReader(fileName);
+                mWaveOut.Init(mAudioFileReader);
 
-            sourceVoice.Start();
+                mWaveOut.Play();
+            }
+            if (mWaveOut != null)
+            {
+                mWaveOut = new WaveOutEvent();
+            }
+
+            //XAudio2 xAudio2 = new XAudio2();
+
+            //MasteringVoice masteringVoice = new MasteringVoice(xAudio2);
+
+            //SharpDX.Multimedia.WaveFormat waveFormat = new SharpDX.Multimedia.WaveFormat(44100, 16, 2);
+
+            //AudioBuffer audioBuffer = new AudioBuffer
+            //{
+            //    Stream = new DataStream(File.ReadAllBytes(fileName).Length, true, false),
+            //    AudioBytes = (int)new FileInfo(fileName).Length,
+            //    Flags = BufferFlags.EndOfStream
+            //};
+
+            //SourceVoice sourceVoice = new SourceVoice(xAudio2, waveFormat);
+
+            //sourceVoice.SubmitSourceBuffer(audioBuffer, null);
+
+            //sourceVoice.Start();
         }
 
-        private void AnalyzeAudio(object sender, EventArgs e)
+        private void AnalyzeAudio()
         {
             byte[] byteBuffer = new byte[mBufferedWaveProvider.BufferLength];
 
@@ -116,7 +128,7 @@ namespace BassDetector
                 {
                     mLedOn = true;
                     ledPictureBox.BackColor = Color.Green;
-                    PlaySound();
+                    //PlaySound();
                 }
             }
             else
@@ -127,6 +139,11 @@ namespace BassDetector
                     ledPictureBox.BackColor = Color.Black;
                 }
             }
+        }
+
+        private void playSound_ButtonClick(object sender, EventArgs e)
+        {
+            PlaySound();
         }
     }
 }
