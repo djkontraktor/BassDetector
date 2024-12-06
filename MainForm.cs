@@ -20,7 +20,7 @@ namespace BassDetector
         private static WasapiLoopbackCapture mWasapiLoopbackCapture = new WasapiLoopbackCapture();
         private static BufferedWaveProvider mBufferedWaveProvider = new BufferedWaveProvider(mWasapiLoopbackCapture.WaveFormat);
         private bool mLedOn = false;
-        private float mAmplitudeTriggerThreshold = 0.0005F;
+        private float mAmplitudeTriggerThreshold = 0.0007F;
         private float mCutoffFreq_Low_Hz = 30;
         private float mCutoffFreq_High_Hz = 90;
         private Enums.Humidity mHumidity = Enums.Humidity.Dry;
@@ -33,19 +33,31 @@ namespace BassDetector
         {
             InitializeComponent();
 
-            mWasapiLoopbackCapture.DataAvailable += (s, a) =>
-            {
-                mBufferedWaveProvider.AddSamples(a.Buffer, 0, a.BytesRecorded);
-            };
+            var device = NAudio.Wave.WasapiLoopbackCapture.GetDefaultLoopbackCaptureDevice();
+
+            mWasapiLoopbackCapture.DataAvailable += (s, a) => { mBufferedWaveProvider.AddSamples(a.Buffer, 0, a.BytesRecorded); };
 
             mWasapiLoopbackCapture.StartRecording();
 
-            //while (mProgramRunning)
-            //{
-            //    System.Threading.Thread.Sleep(100);
-            //    AnalyzeAudio();
-            //}
+            while (mProgramRunning)
+            {
+                AnalyzeAudio();
 
+                if (mLedOn)
+                {
+                    PlaySound();
+                    //ledPictureBox.BackColor = Color.Green;
+                }
+                else
+                {
+                    //ledPictureBox.BackColor = Color.Black;
+                }
+
+                System.Threading.Thread.Sleep(10);
+            }
+
+            mWasapiLoopbackCapture.StopRecording();
+            mWasapiLoopbackCapture.Dispose();
         }
 
         private void PlaySound()
@@ -105,20 +117,11 @@ namespace BassDetector
 
             if (amplitude >= mAmplitudeTriggerThreshold)
             {
-                if (!mLedOn)
-                {
-                    mLedOn = true;
-                    ledPictureBox.BackColor = Color.Green;
-                    //PlaySound();
-                }
+                mLedOn = true;
             }
             else
             {
-                if (mLedOn)
-                {
-                    mLedOn = false;
-                    ledPictureBox.BackColor = Color.Black;
-                }
+                mLedOn = false;
             }
         }
 

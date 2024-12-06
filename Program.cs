@@ -22,6 +22,7 @@ namespace BassDetector
             formThread.SetApartmentState(ApartmentState.STA);
             formThread.Start();
 
+            //StartForm();
             //Application.Run(new MainForm());
         }
 
