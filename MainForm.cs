@@ -50,40 +50,21 @@ namespace BassDetector
 
         private void PlaySound()
         {
-            if (!(mWaveOut == null) && !mWaveOut.PlaybackState.Equals(PlaybackState.Playing))
+            if (mWaveOut == null)
             {
-                string fileName = PathMgt.ReturnRandomWaveFile(mHumidity, mWaveLength);
+                mWaveOut = new WaveOutEvent();
+            }
+            if (!(mWaveOut == null))
+            {
+                mWaveOut.Stop();
 
-                WaveOutEvent waveOutEvent = new WaveOutEvent();
+                string fileName = PathMgt.ReturnRandomWaveFile(mHumidity, mWaveLength);
 
                 mAudioFileReader = new AudioFileReader(fileName);
                 mWaveOut.Init(mAudioFileReader);
 
                 mWaveOut.Play();
             }
-            if (mWaveOut != null)
-            {
-                mWaveOut = new WaveOutEvent();
-            }
-
-            //XAudio2 xAudio2 = new XAudio2();
-
-            //MasteringVoice masteringVoice = new MasteringVoice(xAudio2);
-
-            //SharpDX.Multimedia.WaveFormat waveFormat = new SharpDX.Multimedia.WaveFormat(44100, 16, 2);
-
-            //AudioBuffer audioBuffer = new AudioBuffer
-            //{
-            //    Stream = new DataStream(File.ReadAllBytes(fileName).Length, true, false),
-            //    AudioBytes = (int)new FileInfo(fileName).Length,
-            //    Flags = BufferFlags.EndOfStream
-            //};
-
-            //SourceVoice sourceVoice = new SourceVoice(xAudio2, waveFormat);
-
-            //sourceVoice.SubmitSourceBuffer(audioBuffer, null);
-
-            //sourceVoice.Start();
         }
 
         private void AnalyzeAudio()
