@@ -22,7 +22,7 @@ namespace BassDetector
         private bool mLedOn = false;
         private float mAmplitudeTriggerThreshold = 0.0007F;
         private float mCutoffFreq_Low_Hz = 30;
-        private float mCutoffFreq_High_Hz = 90;
+        private float mCutoffFreq_High_Hz = 100;
         private Enums.Humidity mHumidity = Enums.Humidity.Dry;
         private Enums.WaveLength mWaveLength = Enums.WaveLength.Short;
         private bool mProgramRunning = true;
@@ -128,6 +128,11 @@ namespace BassDetector
         private void playSound_ButtonClick(object sender, EventArgs e)
         {
             PlaySound();
+        }
+
+        private void triggerThreshold_trackBar_ValueChanged(object sender, EventArgs e)
+        {
+            mAmplitudeTriggerThreshold = (float)(triggerThreshold_trackBar.Value) * 0.001F;
         }
     }
 }
